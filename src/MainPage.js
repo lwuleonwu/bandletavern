@@ -3,6 +3,7 @@ import * as mode from "./ModeComponent";
 import * as mission from "./MissionComponent";
 import * as FindGroup from "./FindGroupComponent";
 import * as FindPlayer from "./FindPlayerComponent";
+// import * as client from "./client";
 
 class MainPage extends React.Component {
     constructor(props) {
@@ -10,6 +11,8 @@ class MainPage extends React.Component {
         this.state = {
             mode: mode.Mode.NONE,
             missionId: -1,
+            clientReady: false, // if requests for missions/player info from client are done
+            missionsList: [],
         };
 
         this.selectMode = this.selectMode.bind(this);
@@ -17,6 +20,45 @@ class MainPage extends React.Component {
         this.updateDisplay = this.updateDisplay.bind(this);
         this.cancelGroupFind = this.cancelGroupFind.bind(this);
         this.cancelPlayerFind = this.cancelPlayerFind.bind(this);
+
+        this.messageInit();
+    }
+
+    componentDidMount() {
+        // retrieve missions and player info from client
+        window.api.send("toMain", "mission");
+        window.api.send("toMain", "player");
+    }
+
+    // add listeners for messages from electron
+    messageInit() {
+        console.log("Adding listeners for missions and player info");
+        window.api.receive("missions", (data) => {
+            console.log("Received missions");
+            this.setState({
+                missionsList: data
+            });
+
+            if (this.state.playerInfo) {
+                this.setState({
+                    clientReady: true
+                });
+            }
+
+            console.log(data);
+        });
+        window.api.receive("player", (data) => {
+            console.log("Received player info");
+            this.setState({
+                playerInfo: data
+            });
+
+            if (this.state.missionsList) {
+                this.setState({
+                    clientReady: true
+                });
+            }
+        });
     }
 
     selectMode(newMode) {
@@ -67,8 +109,9 @@ class MainPage extends React.Component {
             return <mode.ModeSelect select={this.selectMode} />;
         } else if (this.state.mode !== mode.Mode.NONE && this.state.missionId === -1) {
             // mission has not yet been selected
+
             return <mission.MissionSelect select={this.selectMission}
-                cancel={this.selectMode} />;
+                cancel={this.selectMode} list={this.state.missionsList} />;
         } else {
             // user is in queue or inviting players
             if (this.state.mode === mode.Mode.FIND_GROUP) {

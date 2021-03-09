@@ -17,22 +17,12 @@ class MissionSelect extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            missionsList: [],
+            missionsList: this.props.list,
         }
 
-        this.loadMission = this.loadMission.bind(this);
         this.selectMission = this.selectMission.bind(this);
         this.confirmMissionSelect = this.confirmMissionSelect.bind(this);
         this.cancelMissionSelect = this.cancelMissionSelect.bind(this);
-    }
-
-    // add a new mission to the missions list
-    loadMission(newMission) {
-        let oldList = this.state.missionsList;
-        let newList = oldList.push(newMission);
-        this.setState({
-            missionsList: newList
-        });
     }
 
     // track which mission user clicked on
@@ -52,34 +42,13 @@ class MissionSelect extends React.Component {
         this.props.cancel(Mode.NONE);
     }
 
-    componentDidMount() {
-        // TODO: populate missions list in this.state.missions
-        // retrieve missions at earlier point in application?
-
-        // for testing
-        let mission1 = {
-            id: 1,
-            title: "the first one",
-            desc: "refer to title",
-            progress: 0,
-            total: 1
-        };
-
-        let mission3 = {
-            id: 3,
-            title: "where's 2?",
-            desc: "we skipped the second one",
-            progress: 1,
-            total: 3
-        };
-
-        /*
-        this.loadMission(mission1);
-        this.loadMission(mission3);
-        */
-        this.setState({
-            missionsList: [mission1, mission3]
-        });
+    componentDidUpdate(oldProps) {
+        console.log(oldProps);
+        if (this.props.list != oldProps.list) {
+            this.setState({
+                missionsList: this.props.list
+            });
+        }
     }
 
     render() {
@@ -117,12 +86,19 @@ class MissionPost extends React.Component {
     }
 
     render() {
+        let objList = this.props.mission.objectives; // objectives list
         return (
             <div id={this.props.mission.id} onClick={this.selectMission}>
                 <div className="missionTitle">{this.props.mission.title}</div>
-                <div className="missionDesc">{this.props.mission.desc}</div>
+                <div className="missionDesc">{this.props.mission.description}</div>
                 <div className="missionProgress">
-                    {this.props.mission.progress} / {this.props.mission.total}
+                    <ul>
+                        {objList.map((obj, index) =>
+                            <li key={index}>
+                                {obj.progress.currentProgress} / {obj.progress.totalCount}
+                            </li>
+                        )}
+                    </ul>
                 </div>
             </div>
         );
