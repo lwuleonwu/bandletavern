@@ -3,7 +3,7 @@ import * as mode from "./ModeComponent";
 import * as mission from "./MissionComponent";
 import * as FindGroup from "./FindGroupComponent";
 import * as FindPlayer from "./FindPlayerComponent";
-// import * as client from "./client";
+import * as database from "./database";
 
 class MainPage extends React.Component {
     constructor(props) {
@@ -13,6 +13,8 @@ class MainPage extends React.Component {
             missionId: -1,
             clientReady: false, // if requests for missions/player info from client are done
             missionsList: [],
+            userList: new Map(),
+            userRegistered: false, // check if user is already in database
         };
 
         this.selectMode = this.selectMode.bind(this);
@@ -53,11 +55,24 @@ class MainPage extends React.Component {
                 playerInfo: data
             });
 
+            // ready connection to database
+            window.api.send("player", data);
+
             if (this.state.missionsList) {
                 this.setState({
                     clientReady: true
                 });
             }
+
+            console.log(data);
+        });
+        window.api.receive("token", (data) => {
+            console.log("Received auth token");
+            this.setState({
+                token: data
+            });
+
+            database.signIn(this.state.token);
         });
     }
 
@@ -78,6 +93,39 @@ class MainPage extends React.Component {
     selectMission(newMission) {
         console.log(`Confirmed mission selected: ${newMission.id}`);
 
+        if (this.state.mode === mode.Mode.FIND_GROUP) {
+            // register user for mission
+            database.registerMission(this.state.playerInfo, newMission.id);
+        } else if (this.state.mode === mode.Mode.FIND_PLAYER) {
+            // retrieve user list for mission
+            database.addMissionListener(newMission.id, (playerInfo, added) => {
+                // initial snapshot contains every item in the list
+                // snapshot contains the data that was added or removed
+                if (added) {
+                    // add player info to list
+                    if (!this.state.userList.has(playerInfo.accountId)) {
+                        let newUserList = this.state.userList;
+                        newUserList.set(playerInfo.accountId, playerInfo);
+                        this.setState({
+                            userList: newUserList
+                        });
+                    } else {
+                        // player already in list, do not update
+                    }
+                } else {
+                    if (this.state.userList.has(playerInfo.accountId)) {
+                        let newUserList = this.state.userList;
+                        newUserList.delete(playerInfo.accountId);
+                        this.setState({
+                            userList: newUserList
+                        });
+                    } else {
+                        // user not in list, do not update, also weird scenario
+                    }
+                }
+            });
+        }
+
         this.setState({
             missionId: newMission.id,
             mission: newMission
@@ -85,8 +133,9 @@ class MainPage extends React.Component {
     }
 
     cancelGroupFind() {
-        // TODO: remove user info from database
         console.log(`Left queue for ${this.state.mission.title}`)
+
+        database.unregisterMission(this.state.playerInfo, this.state.missionId);
 
         this.setState({
             missionId: -1
@@ -94,8 +143,9 @@ class MainPage extends React.Component {
     }
 
     cancelPlayerFind() {
-        // TODO: remove listener from database
         console.log(`End search for players`);
+
+        database.removeMissionListener(this.state.missionId);
 
         this.setState({
             missionId: -1
@@ -119,7 +169,7 @@ class MainPage extends React.Component {
                     cancel={this.cancelGroupFind} />
             } else if (this.state.mode === mode.Mode.FIND_PLAYER) {
                 return <FindPlayer.PlayerSearch missionTitle={this.state.mission.title}
-                    cancel={this.cancelPlayerFind} />
+                    cancel={this.cancelPlayerFind} list={this.state.userList} />
             }
         }
     }

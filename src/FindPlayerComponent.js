@@ -12,35 +12,34 @@ class PlayerSearch extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            playerList: [],
+            userList: this.props.list,
         }
     }
 
+    /*
     componentDidMount() {
-        // TODO: add listener to database to retrieve list of users registered for mission
-        // do this in MissionComponent?
+        let testList = new Map();
+        testList.set(500, {
+            accountId: 500,
+            displayName: "tets"
+        });
 
-        // for testing
-        let player1 = {
-            name: "Foxwell",
-            id: 1,
-        };
-
-        let player2 = {
-            name: "Zaichata",
-            id: 2,
-        }
+        testList.set(800, {
+            accountId: 800,
+            displayName: "another one"
+        });
 
         this.setState({
-            playerList: [player1, player2]
+            userList: testList
         });
     }
+    */
 
     render() {
         return(
             <div>
                 <div>Searching for players for: <b>{this.props.missionTitle}</b></div>
-                <PlayerList playerList={this.state.playerList} />
+                <PlayerList userList={this.state.userList} />
                 <button onClick={this.props.cancel}>Cancel Search</button>
             </div>
         );
@@ -50,9 +49,9 @@ class PlayerSearch extends React.Component {
 function PlayerList(props) {
     return (
         <ul>
-            {props.playerList.map(player =>
-                <li key={player.id}>
-                    <PlayerPost player={player} />
+            {[...props.userList].map(([accountId, playerInfo]) =>
+                <li key={accountId}>
+                    <PlayerPost player={playerInfo} />
                 </li>
             )}
         </ul>
@@ -80,7 +79,9 @@ class PlayerPost extends React.Component {
     render() {
         return (
             <div>
-                <div className="playerName">{this.props.player.name}</div>
+                <div className="playerName" id={this.props.player.accountId}>
+                    {this.props.player.displayName}
+                </div>
                 <button className="inviteBtn" onClick={this.handleInvite}>
                     {this.state.inviteStatus ? "✓" : "+"}
                 </button>

@@ -1,16 +1,19 @@
 const {app, BrowserWindow, ipcMain} = require("electron");
 const path = require("path");
 const fs = require("fs");
+require("dotenv").config();
 const client = require("./client.js");
+const auth = require("./auth.js");
 
 let mainWindow;
 let lockfilePath = "C:/Riot Games/League of Legends/lockfile";
+let playerData;
 client.readLockfile(lockfilePath);
 
 function createWindow() {
     mainWindow = new BrowserWindow({
-        width: 800,
-        height: 600,
+        width: 1024,
+        height: 768,
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
@@ -32,7 +35,17 @@ ipcMain.on("toMain", (event, args) => {
         client.retrieveClientData(client.requestPaths.missions, sendToRenderer);
     } else if (args === "player") {
         client.retrieveClientData(client.requestPaths.playerId, sendToRenderer);
+    } else if (args === "database") {
+        console.log("Received:", args);
     }
+});
+
+// receive player information
+ipcMain.on("player", (event, args) => {
+    playerData = args;
+    
+    // start database auth process
+    auth.createToken(String(playerData.accountId), sendToRenderer);
 });
 
 function sendToRenderer(channel, data) {
@@ -40,6 +53,8 @@ function sendToRenderer(channel, data) {
         mainWindow.webContents.send("missions", data);
     } else if (channel === client.requestPaths.playerId) {
         mainWindow.webContents.send("player", data);
+    } else if (channel === "token") {
+        mainWindow.webContents.send("token", data);
     } else {
         mainWindow.webContents.send("fromMain", data);
     }
