@@ -35,8 +35,8 @@ ipcMain.on("toMain", (event, args) => {
         client.retrieveClientData(client.requestPaths.missions, sendToRenderer);
     } else if (args === "player") {
         client.retrieveClientData(client.requestPaths.playerId, sendToRenderer);
-    } else if (args === "database") {
-        console.log("Received:", args);
+    } else if (args === "exit") {
+        app.quit();
     }
 });
 

@@ -20,5 +20,5 @@ function createToken(accountId, callback) {
 }
 
 module.exports = {
-    createToken,
+    createToken
 }

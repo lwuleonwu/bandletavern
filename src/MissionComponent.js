@@ -34,8 +34,6 @@ class MissionSelect extends React.Component {
 
     confirmMissionSelect() {
         this.props.select(this.state.mission);
-
-        // TODO: add user info to database
     }
 
     cancelMissionSelect() {
@@ -43,7 +41,6 @@ class MissionSelect extends React.Component {
     }
 
     componentDidUpdate(oldProps) {
-        console.log(oldProps);
         if (this.props.list != oldProps.list) {
             this.setState({
                 missionsList: this.props.list

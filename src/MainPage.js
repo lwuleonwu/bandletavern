@@ -30,6 +30,21 @@ class MainPage extends React.Component {
         // retrieve missions and player info from client
         window.api.send("toMain", "mission");
         window.api.send("toMain", "player");
+
+        // remove user info from database on exit
+        window.onbeforeunload = (event) => {
+            let playerInfo = this.state.playerInfo;
+            database.checkUser(playerInfo.accountId, (registeredMissionId) => {
+                if (registeredMissionId !== -1) {
+                    // user already in database, remove them
+                    database.unregisterMission(playerInfo, registeredMissionId);
+                }
+                window.api.send("toMain", "exit");
+                window.onbeforeunload = null;
+            });
+
+            event.returnValue = false;
+        }
     }
 
     // add listeners for messages from electron
@@ -93,42 +108,50 @@ class MainPage extends React.Component {
     selectMission(newMission) {
         console.log(`Confirmed mission selected: ${newMission.id}`);
 
-        if (this.state.mode === mode.Mode.FIND_GROUP) {
-            // register user for mission
-            database.registerMission(this.state.playerInfo, newMission.id);
-        } else if (this.state.mode === mode.Mode.FIND_PLAYER) {
-            // retrieve user list for mission
-            database.addMissionListener(newMission.id, (playerInfo, added) => {
-                // initial snapshot contains every item in the list
-                // snapshot contains the data that was added or removed
-                if (added) {
-                    // add player info to list
-                    if (!this.state.userList.has(playerInfo.accountId)) {
-                        let newUserList = this.state.userList;
-                        newUserList.set(playerInfo.accountId, playerInfo);
-                        this.setState({
-                            userList: newUserList
-                        });
-                    } else {
-                        // player already in list, do not update
-                    }
-                } else {
-                    if (this.state.userList.has(playerInfo.accountId)) {
-                        let newUserList = this.state.userList;
-                        newUserList.delete(playerInfo.accountId);
-                        this.setState({
-                            userList: newUserList
-                        });
-                    } else {
-                        // user not in list, do not update, also weird scenario
-                    }
-                }
-            });
-        }
+        let playerInfo = this.state.playerInfo;
+        database.checkUser(playerInfo.accountId, (registeredMissionId) => {
+            if (registeredMissionId !== -1) {
+                // user already in database, remove them
+                database.unregisterMission(playerInfo, registeredMissionId);
+            }
 
-        this.setState({
-            missionId: newMission.id,
-            mission: newMission
+            if (this.state.mode === mode.Mode.FIND_GROUP) {
+                // register user for mission
+                database.registerMission(playerInfo, newMission.id);
+            } else if (this.state.mode === mode.Mode.FIND_PLAYER) {
+                // retrieve user list for mission
+                database.addMissionListener(newMission.id, (regPlayerInfo, added) => {
+                    // initial snapshot contains every item in the list
+                    // snapshot contains the data that was added or removed
+                    if (added) {
+                        // add player info to list
+                        if (!this.state.userList.has(regPlayerInfo.accountId)) {
+                            let newUserList = this.state.userList;
+                            newUserList.set(regPlayerInfo.accountId, regPlayerInfo);
+                            this.setState({
+                                userList: newUserList
+                            });
+                        } else {
+                            // player already in list, do not update
+                        }
+                    } else {
+                        if (this.state.userList.has(regPlayerInfo.accountId)) {
+                            let newUserList = this.state.userList;
+                            newUserList.delete(regPlayerInfo.accountId);
+                            this.setState({
+                                userList: newUserList
+                            });
+                        } else {
+                            // user not in list, do not update, also weird scenario
+                        }
+                    }
+                });
+            }
+
+            this.setState({
+                missionId: newMission.id,
+                mission: newMission
+            });
         });
     }
 

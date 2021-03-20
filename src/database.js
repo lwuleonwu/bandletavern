@@ -19,9 +19,15 @@ let database = firebase.database();
 
 // check if user with accountId is registered for mission
 // return null if not registered, return missionId if registered
-function checkUser(accountId) {
+function checkUser(accountId, callback) {
     console.log("Checking database for user with accountId:", accountId);
-    return database.ref(`users/${accountId}`).once("value");
+    database.ref(`users/${accountId}`).once("value").then(response => {
+        let registeredMissionId = response.val();
+        if (registeredMissionId !== null) {
+            callback(registeredMissionId.missionId);
+        }
+        callback(-1);
+    });
 }
 
 // register user under missionId
@@ -35,12 +41,29 @@ function registerMission(playerInfo, missionId) {
         summonerId: playerInfo.summonerId,
         displayName: playerInfo.displayName,
         puuid: playerInfo.puuid
+    }, (error) => {
+        if (error) {
+            // write to database failed
+            console.log("Failed to write player info under missionId:", missionId);
+            console.log(error);
+        } else {
+            console.log("Wrote player info under missionId:", missionId);
+        }
     });
 
     // add player to list of active users
-    let databaseUserPath = `users/${playerInfo.accoundId}`;
+    let databaseUserPath = `users/${playerInfo.accountId}`;
     database.ref(databaseUserPath).set({
         missionId: missionId
+    }, (error) => {
+        if (error) {
+            // write to databse failed
+            console.log("Failed to write player info in user list with missionId:", missionId);
+            console.log(error);
+        } else {
+            // data written complete
+            console.log("Added player to list of active users for missionId:", missionId);
+        }
     });
 }
 
@@ -105,4 +128,4 @@ function signOut() {
 }
 
 export {checkUser, registerMission, unregisterMission, addMissionListener,
-    removeMissionListener ,signIn, signOut};
+    removeMissionListener, signIn, signOut};
