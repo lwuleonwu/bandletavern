@@ -9,7 +9,7 @@ contextBridge.exposeInMainWorld("api", {
         }
     },
     receive: (channel, func) => {
-        let validChannels = ["fromMain", "missions", "player", "token"];
+        let validChannels = ["fromMain", "missions", "player", "token", "invite"];
         if (validChannels.includes(channel)) {
             ipcRenderer.on(channel, (event, ...args) => func(...args));
 

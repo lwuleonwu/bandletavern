@@ -48,6 +48,12 @@ ipcMain.on("player", (event, args) => {
     auth.createToken(String(playerData.accountId), sendToRenderer);
 });
 
+// make post request to client to invite player
+ipcMain.on("invite", (event, args) => {
+    let otherPlayerData = args;
+    client.invitePlayer(otherPlayerData, sendToRenderer);
+});
+
 function sendToRenderer(channel, data) {
     if (channel === client.requestPaths.missions) {
         mainWindow.webContents.send("missions", data);

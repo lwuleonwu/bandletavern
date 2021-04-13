@@ -86,12 +86,20 @@ function addMissionListener(missionId, callback) {
         let snapshotJSON = snapshot.toJSON();
         console.log(snapshotJSON);
         callback(snapshotJSON, true);
+    }, (error) => {
+        console.log("Failed to add listener for child_added under:",
+            databaseMissionPath);
+        console.log(error);
     });
 
     database.ref(databaseMissionPath).on("child_removed", snapshot => {
         let snapshotJSON = snapshot.toJSON();
         console.log(snapshotJSON);
         callback(snapshotJSON, false);
+    }, (error) => {
+        console.log("Failed to add listener for child_removed under:",
+            databaseMissionPath);
+        console.log(error);
     });
 }
 

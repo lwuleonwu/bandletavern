@@ -39,6 +39,7 @@ class MainPage extends React.Component {
                     // user already in database, remove them
                     database.unregisterMission(playerInfo, registeredMissionId);
                 }
+                database.signOut();
                 window.api.send("toMain", "exit");
                 window.onbeforeunload = null;
             });
@@ -122,7 +123,8 @@ class MainPage extends React.Component {
                 // retrieve user list for mission
                 database.addMissionListener(newMission.id, (regPlayerInfo, added) => {
                     // initial snapshot contains every item in the list
-                    // snapshot contains the data that was added or removed
+                    // added: true, snapshot contains names of users to add to list
+                    // added: false, snapshot contains names of users to remove
                     if (added) {
                         // add player info to list
                         if (!this.state.userList.has(regPlayerInfo.accountId)) {

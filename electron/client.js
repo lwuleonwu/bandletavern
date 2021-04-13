@@ -8,6 +8,7 @@ const localRoutingValue = "https://127.0.0.1:";
 const requestPaths = {
     missions: "/lol-missions/v1/missions",
     playerId: "/lol-summoner/v1/current-summoner",
+    invite: "/lol-lobby/v2/lobby/invitations",
 };
 
 let lockfile = {}; // lockfile format is process:pid:port:password:protocol
@@ -97,6 +98,64 @@ function retrieveClientData(requestPath, callback) {
     }
 }
 
+// TODO: check if user is in party first
+function invitePlayer(otherPlayerInfo, callback) {
+    if (lockfileSuccess) {
+        let authCode = `riot:${lockfile.password}`;
+
+        let playerInviteData = [{
+            "invitationId": "string",
+            "state": "Requested",
+            "timestamp": "",
+            "toSummonerId": otherPlayerInfo.summonerId,
+            "toSummonerName": otherPlayerInfo.displayName,
+        }];
+
+        // https request options to client
+        let requestOptions = {
+            host: "127.0.0.1",
+            port: lockfile.port,
+            path: requestPaths.invite,
+            method: "POST",
+            headers: {
+                "Accept": "application/json",
+                "Authorization": `Basic ${Buffer.from(authCode).toString("base64")}`,
+            },
+            rejectUnauthorized: false, // TODO: temp fix for cert error
+        };
+
+        // make request to client via https
+        let clientRequest = https.request(requestOptions, (response) => {
+            console.log("Request:", requestPaths.invite);
+            console.log("Response status code:", response.statusCode);
+            console.log("Response headers:", response.headers);
+
+            let responseData = "";
+
+            response.on("data", (data) => {
+                responseData += data;
+            });
+
+            response.on("end", () => {
+                console.log("POST request response:", responseData);
+                callback("main", "Completed POST request");
+            });
+        });
+
+        clientRequest.on("error", (error) => {
+            console.log(error);
+            // TODO: handle error more elegantly
+        });
+
+        clientRequest.write(JSON.stringify(playerInviteData));
+        clientRequest.end();
+    } else {
+        // lockfile has not been read yet
+        console.log("ERROR: Lockfile not read");
+        // TODO: handle error more elegantly
+    }
+}
+
 // parse mission data in json format
 function parseMissionData(data) {
     let pendingMissions = data.filter(mission =>
@@ -111,5 +170,6 @@ function parseMissionData(data) {
 module.exports = {
     requestPaths,
     readLockfile,
-    retrieveClientData
+    retrieveClientData,
+    invitePlayer,
 };

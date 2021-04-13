@@ -69,7 +69,8 @@ class PlayerPost extends React.Component {
     }
 
     handleInvite() {
-        // TODO: send specified player an invite through client api
+        let otherPlayerData = this.props.player;
+        window.api.send("invite", otherPlayerData);
 
         this.setState({
             inviteStatus: true
