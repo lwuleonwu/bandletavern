@@ -90,6 +90,12 @@ class MainPage extends React.Component {
 
             database.signIn(this.state.token);
         });
+        window.api.receive("validLobby", (data) => {
+            console.log("Received valid lobby check");
+            this.setState({
+                inLobby: data
+            });
+        });
     }
 
     selectMode(newMode) {
@@ -106,55 +112,57 @@ class MainPage extends React.Component {
         });
     }
 
-    selectMission(newMission) {
-        console.log(`Confirmed mission selected: ${newMission.id}`);
+    selectMission(newMission, newMissionId) {
+        if (newMissionId !== -1) {
+            console.log(`Confirmed mission selected: ${newMission.id}`);
 
-        let playerInfo = this.state.playerInfo;
-        database.checkUser(playerInfo.accountId, (registeredMissionId) => {
-            if (registeredMissionId !== -1) {
-                // user already in database, remove them
-                database.unregisterMission(playerInfo, registeredMissionId);
-            }
+            let playerInfo = this.state.playerInfo;
+            database.checkUser(playerInfo.accountId, (registeredMissionId) => {
+                if (registeredMissionId !== -1) {
+                    // user already in database, remove them
+                    database.unregisterMission(playerInfo, registeredMissionId);
+                }
 
-            if (this.state.mode === mode.Mode.FIND_GROUP) {
-                // register user for mission
-                database.registerMission(playerInfo, newMission.id);
-            } else if (this.state.mode === mode.Mode.FIND_PLAYER) {
-                // retrieve user list for mission
-                database.addMissionListener(newMission.id, (regPlayerInfo, added) => {
-                    // initial snapshot contains every item in the list
-                    // added: true, snapshot contains names of users to add to list
-                    // added: false, snapshot contains names of users to remove
-                    if (added) {
-                        // add player info to list
-                        if (!this.state.userList.has(regPlayerInfo.accountId)) {
-                            let newUserList = this.state.userList;
-                            newUserList.set(regPlayerInfo.accountId, regPlayerInfo);
-                            this.setState({
-                                userList: newUserList
-                            });
+                if (this.state.mode === mode.Mode.FIND_GROUP) {
+                    // register user for mission
+                    database.registerMission(playerInfo, newMission.id);
+                } else if (this.state.mode === mode.Mode.FIND_PLAYER) {
+                    // retrieve user list for mission
+                    database.addMissionListener(newMission.id, (regPlayerInfo, added) => {
+                        // initial snapshot contains every item in the list
+                        // added: true, snapshot contains names of users to add to list
+                        // added: false, snapshot contains names of users to remove
+                        if (added) {
+                            // add player info to list
+                            if (!this.state.userList.has(regPlayerInfo.accountId)) {
+                                let newUserList = this.state.userList;
+                                newUserList.set(regPlayerInfo.accountId, regPlayerInfo);
+                                this.setState({
+                                    userList: newUserList
+                                });
+                            } else {
+                                // player already in list, do not update
+                            }
                         } else {
-                            // player already in list, do not update
+                            if (this.state.userList.has(regPlayerInfo.accountId)) {
+                                let newUserList = this.state.userList;
+                                newUserList.delete(regPlayerInfo.accountId);
+                                this.setState({
+                                    userList: newUserList
+                                });
+                            } else {
+                                // user not in list, do not update, also weird scenario
+                            }
                         }
-                    } else {
-                        if (this.state.userList.has(regPlayerInfo.accountId)) {
-                            let newUserList = this.state.userList;
-                            newUserList.delete(regPlayerInfo.accountId);
-                            this.setState({
-                                userList: newUserList
-                            });
-                        } else {
-                            // user not in list, do not update, also weird scenario
-                        }
-                    }
+                    });
+                }
+
+                this.setState({
+                    missionId: newMission.id,
+                    mission: newMission
                 });
-            }
-
-            this.setState({
-                missionId: newMission.id,
-                mission: newMission
             });
-        });
+        }
     }
 
     cancelGroupFind() {
@@ -179,14 +187,12 @@ class MainPage extends React.Component {
 
     // switch between mode select, mission select, and results
     updateDisplay() {
-        if (this.state.mode === mode.Mode.NONE) {
-            // mode has not yet been selected
-            return <mode.ModeSelect select={this.selectMode} />;
-        } else if (this.state.mode !== mode.Mode.NONE && this.state.missionId === -1) {
-            // mission has not yet been selected
-
-            return <mission.MissionSelect select={this.selectMission}
-                cancel={this.selectMode} list={this.state.missionsList} />;
+        if ((this.state.mode === mode.Mode.None || this.state.missionId === -1) && this.state.clientReady) {
+            return <div>
+                <mode.ModeSelect select={this.selectMode} />
+                <mission.MissionSelect select={this.selectMission}
+                    cancel={this.selectMode} list={this.state.missionsList} />
+            </div>;
         } else {
             // user is in queue or inviting players
             if (this.state.mode === mode.Mode.FIND_GROUP) {

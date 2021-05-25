@@ -9,6 +9,7 @@ const requestPaths = {
     missions: "/lol-missions/v1/missions",
     playerId: "/lol-summoner/v1/current-summoner",
     invite: "/lol-lobby/v2/lobby/invitations",
+    validLobby: "/lol-lobby/v2/party-active",
 };
 
 let lockfile = {}; // lockfile format is process:pid:port:password:protocol
@@ -80,6 +81,8 @@ function retrieveClientData(requestPath, callback) {
                     callback(requestPath, filteredMissions);
                 } else if (requestPath === requestPaths.playerId) {
                     callback(requestPath, JSON.parse(responseData));
+                } else if (requestPath == requestPaths.validLobby) {
+                    callback(requestPath, responseData);
                 }
             });
         });
@@ -138,7 +141,11 @@ function invitePlayer(otherPlayerInfo, callback) {
 
             response.on("end", () => {
                 console.log("POST request response:", responseData);
-                callback("main", "Completed POST request");
+                if (response.statusCode === 200) {
+                    callback("invite", response.statusCode);
+                } else {
+                    callback("invite", JSON.parse(responseData).message);
+                }
             });
         });
 

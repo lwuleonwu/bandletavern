@@ -71,9 +71,14 @@ class PlayerPost extends React.Component {
     handleInvite() {
         let otherPlayerData = this.props.player;
         window.api.send("invite", otherPlayerData);
-
-        this.setState({
-            inviteStatus: true
+        window.api.receive("invite", (inviteResult) => {
+            if (inviteResult === 200) {
+                this.setState({
+                    inviteStatus: true
+                });
+            } else if (inviteResult === "LOBBY_NOT_FOUND") {
+                // TODO: display message to user to get in a lobby wtih inv perms
+            }
         });
     }
     

@@ -27,6 +27,11 @@ function checkUser(accountId, callback) {
             callback(registeredMissionId.missionId);
         }
         callback(-1);
+    }, (error) => {
+        if (error) {
+            console.log(error);
+            callback(-1);
+        }
     });
 }
 

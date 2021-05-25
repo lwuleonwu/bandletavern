@@ -35,6 +35,8 @@ ipcMain.on("toMain", (event, args) => {
         client.retrieveClientData(client.requestPaths.missions, sendToRenderer);
     } else if (args === "player") {
         client.retrieveClientData(client.requestPaths.playerId, sendToRenderer);
+    } else if (args === "validLobby") { 
+        client.retrieveClientData(client.requestPaths.validLobby, sendToRenderer);
     } else if (args === "exit") {
         app.quit();
     }
@@ -61,6 +63,10 @@ function sendToRenderer(channel, data) {
         mainWindow.webContents.send("player", data);
     } else if (channel === "token") {
         mainWindow.webContents.send("token", data);
+    } else if (channel === "invite") { 
+        mainWindow.webContents.send("invite", data);
+    } else if (channel === "validLobby") {
+        mainWindow.webContents.send("validLobby", data);
     } else {
         mainWindow.webContents.send("fromMain", data);
     }

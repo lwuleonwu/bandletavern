@@ -18,6 +18,7 @@ class MissionSelect extends React.Component {
         super(props);
         this.state = {
             missionsList: this.props.list,
+            missionId: -1
         }
 
         this.selectMission = this.selectMission.bind(this);
@@ -28,12 +29,13 @@ class MissionSelect extends React.Component {
     // track which mission user clicked on
     selectMission(newMission) {
         this.setState({
-            mission: newMission
+            mission: newMission,
+            missionId: newMission.id
         });
     }
 
     confirmMissionSelect() {
-        this.props.select(this.state.mission);
+        this.props.select(this.state.mission, this.state.missionId);
     }
 
     cancelMissionSelect() {
@@ -50,7 +52,7 @@ class MissionSelect extends React.Component {
 
     render() {
         return (
-            <div>
+            <div className={"missionsList"}>
                 <ul>
                     {(this.state.missionsList).map((mission) => 
                         <li key={mission.id}>
@@ -92,7 +94,12 @@ class MissionPost extends React.Component {
                     <ul>
                         {objList.map((obj, index) =>
                             <li key={index}>
-                                {obj.progress.currentProgress} / {obj.progress.totalCount}
+                                <div className="objDesc">{obj.description}</div>
+                                <div className="objProgress">
+                                    <span className="objProgressCurr">{obj.progress.currentProgress}</span> 
+                                    / 
+                                    <span className="objProgressTotal">{obj.progress.totalCount}</span>
+                                </div>
                             </li>
                         )}
                     </ul>
